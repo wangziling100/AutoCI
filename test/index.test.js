@@ -2,7 +2,7 @@
 //const process = require('process');
 //const cp = require('child_process');
 //const path = require('path');
-const { run }= require('./index')
+const { run }= require('../index')
 
 /*
 test('throws invalid number', async () => {
