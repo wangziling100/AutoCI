@@ -26,7 +26,7 @@ test('test runs', () => {
 */
 test('run all', ()=>{
   const testData = {
-    configPath: 'test/coverage/coverage-final.json',
+    configPath: '.github/autoCI.config.json',
     modulesDir: ''
   }
   run(testData, true)

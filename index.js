@@ -2,7 +2,7 @@ const core = require('@actions/core');
 const github = require('@actions/github');
 const io = require('./lib/io')
 const analyser = require('./lib/commitAnalyser');
-const { locateConfig } = require('./lib/io');
+const executor = require('./lib/executor')
 
 // most @actions toolkit packages have async methods
 async function run(testData, debug=false) {
@@ -17,15 +17,24 @@ async function run(testData, debug=false) {
       configPath = core.getInput('configPath')
       modulesDir = core.getInput('modulesDir')
       context = github.context
+
     }
 
     const baseInfo = io.getInfo(context)
     const commit = baseInfo.commit
-    let [_, workspace] = analyser.analyse(commit)
+    const branch = baseInfo.branch
+    let workspace = analyser.analyse(commit, branch)[1]
     if (workspace===null) workspace = 'global'
     const configInfo = io 
     .locateConfig(workspace, configPath, modulesDir)
-    console.log(configInfo, 'config')
+    if(configInfo===null) {
+      core.setFailed(`Sorry, can't find config file`)
+      return
+    }
+    const config = io.getCIConfig(...configInfo)
+    const succeed = executor.execute(config)
+    if (succeed) console.log('Succeed!')
+    else core.setFailed('Action failed')
   }
   catch(error){
     if (debug) console.log(error, 'error message')
