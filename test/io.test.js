@@ -23,21 +23,19 @@ test('test searchFile', () => {
 test('test locate config', () => {
     const result1 = JSON.parse(
         fs.readFileSync(
-            './test/coverage/coverage-final.json'))
+            '.github/autoCI.config.json'))
     expect(
         locateConfig('global', 
-        './test/coverage/coverage-final.json', ''))
+        '.github/autoCI.config.json', ''))
     .toEqual(['.', result1])
-    expect(locateConfig('coverage', 'coverage-final.json', 'test'))
-    .toEqual(['test/coverage', result1])
-    expect(locateConfig('coverage', 'coverage-final.json', ''))
-    .toEqual(['test/coverage', result1])
-    expect(locateConfig('.', 'coverage-final.json', ''))
+    expect(locateConfig('.github', 'autoCI.config.json', ''))
+    .toEqual(['.github', result1])
+    expect(locateConfig('.', 'autoCI.config.json', ''))
     .toBe(null)
-    expect(locateConfig('coverage', 'coverage-final', ''))
+    expect(locateConfig('.github', 'autoCI.config', ''))
     .toBe(null)
-    expect(locateConfig('coverage', 'coverage-final.json', 'abc'))
+    expect(locateConfig('.github', 'autoCI.config.json', 'abc'))
     .toBe(null)
-    expect(locateConfig('coverage', 'coverage-final', 'test'))
+    expect(locateConfig('.github', 'config.json', 'test'))
     .toBe(null)
 })

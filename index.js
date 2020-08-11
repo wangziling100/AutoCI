@@ -35,7 +35,11 @@ async function run(testData, debug=false) {
     const config = io.getCIConfig(...configInfo)
     if(debug) console.log('config file', config)
     const succeed = executor.execute(config)
-    if (succeed) console.log('Succeed!')
+    if (succeed) {
+      console.log('Succeed!')
+      core.addPath(config.dir)
+      core.setOutput('moduleDir', config.dir)
+    }
     else core.setFailed('Action failed')
   }
   catch(error){

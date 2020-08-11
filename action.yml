@@ -9,13 +9,9 @@ inputs:
     required: false
     default: ''
 
-  #milliseconds:  # id of input
-    #description: 'number of milliseconds to wait'
-    #required: true
-    #default: '1000'
-#outputs:
-  #time: # output will be available to future steps
-    #description: 'The message to output'
+outputs:
+  moduleDir: 
+    description: 'root directory of the selected module'
 runs:
   using: 'node12'
   main: 'dist/index.js'

@@ -200,7 +200,11 @@ async function run(testData, debug=false) {
     const config = io.getCIConfig(...configInfo)
     if(debug) console.log('config file', config)
     const succeed = executor.execute(config)
-    if (succeed) console.log('Succeed!')
+    if (succeed) {
+      console.log('Succeed!')
+      core.addPath(config.dir)
+      core.setOutput('moduleDir', config.dir)
+    }
     else core.setFailed('Action failed')
   }
   catch(error){
@@ -3662,22 +3666,25 @@ function locateConfig(workspace, configPath, modulesDir){
         const isExist = checkPath(configPath)
         if (isExist) {
             return [
-                path.join(workspace, modulesDir),
+                //path.join(workspace, modulesDir),
+                workspace,
                 JSON.parse(fs.readFileSync(configPath))
             ]
         }
         else return null
     }
     else if (workspace!==null && workspace!==undefined){
-        let isExist = checkPath(
-            path.join(workspace, 
-                      modulesDir, 
-                      configPath)
-        )
+        let newPath = path.join(modulesDir,
+                                workspace,
+                                configPath)
+        let isExist = checkPath(newPath)
+        
+        console.log(path.join(workspace, modulesDir, configPath))
         if (isExist) {
             return [
-                path.join(workspace, modulesDir), 
-                JSON.parse(fs.readFileSync(configPath))
+                //path.join(workspace, modulesDir), 
+                path.join(modulesDir, workspace),
+                JSON.parse(fs.readFileSync(newPath))
             ]
         }
         let searchArea ='.'

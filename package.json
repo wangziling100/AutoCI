@@ -6,10 +6,15 @@
   "scripts": {
     "lint": "eslint .",
     "prepare": "ncc build index.js -o dist --source-map",
-    "test": "jest --rootDir test",
+    "test": "jest test --coverage",
     "all": "npm run lint && npm run prepare && npm run test"
   },
   "jest": {
+    "collectCoverageFrom": [
+      "**/*.{js,jsx}",
+      "!**/*.test.**",
+      "!**/coverage/**"
+    ],
     "coverageDirectory": "./coverage/",
     "collectCoverage": true
   },
