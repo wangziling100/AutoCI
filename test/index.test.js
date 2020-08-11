@@ -25,5 +25,9 @@ test('test runs', () => {
 })
 */
 test('run all', ()=>{
-  run()
+  const testData = {
+    configPath: 'test/coverage/coverage-final.json',
+    modulesDir: ''
+  }
+  run(testData, true)
 })

@@ -1,6 +1,14 @@
 name: 'auto-ci'
 description: 'CI for monorepo based Node project'
-# inputs:
+inputs:
+  configPath:
+    description: 'path to config file'
+    required: true
+  modulesDir:
+    description: 'the general directory which stores all modules'
+    required: false
+    default: ''
+
   #milliseconds:  # id of input
     #description: 'number of milliseconds to wait'
     #required: true

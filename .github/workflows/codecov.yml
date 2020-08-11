@@ -7,7 +7,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: Generate coverage report
       run: |
-        yarn add jest -D && yarn test
+        yarn install && yarn test
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       with:
