@@ -26,7 +26,6 @@ async function run(testData, debug=false) {
     const configInfo = io 
     .locateConfig(workspace, configPath, modulesDir)
     console.log(configInfo, 'config')
-
   }
   catch(error){
     if (debug) console.log(error, 'error message')

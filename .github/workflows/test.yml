@@ -13,4 +13,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - run: yarn install
-    - uses: ./
+    - name: Local Run
+      uses: ./
+      with:
+        configPath: ./.github/autoCI.config.json
+    
