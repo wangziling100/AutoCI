@@ -7,6 +7,7 @@ const executor = require('./lib/executor')
 // most @actions toolkit packages have async methods
 async function run(testData, debug=false) {
   try{
+    console.log('start...')
     let configPath, modulesDir, context
     if (testData!==undefined && testData!==null){
       configPath = testData.configPath
@@ -32,6 +33,7 @@ async function run(testData, debug=false) {
       return
     }
     const config = io.getCIConfig(...configInfo)
+    if(debug) console.log('config file', config)
     const succeed = executor.execute(config)
     if (succeed) console.log('Succeed!')
     else core.setFailed('Action failed')
