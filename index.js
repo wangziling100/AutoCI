@@ -32,6 +32,7 @@ async function run(testData, debug=false) {
       return
     }
     const config = io.getCIConfig(...configInfo)
+    console.log('config file', config)
     const succeed = executor.execute(config)
     if (succeed) console.log('Succeed!')
     else core.setFailed('Action failed')
