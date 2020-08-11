@@ -45,7 +45,8 @@ jobs:
 configPath is required
 ## Parameter Descriptions
 - configPath: Path to your config file
-- modulesDir: Root Directory of your modules
+- modulesDir: Root Directory of your modules 
+
 Config file template is [here](https://github.com/wangziling100/AutoCI/blob/main/.github/autoCI.config.json)
 # Example
 More examples see [here](https://github.com/wangziling100/AutoPublishTest/actions)
