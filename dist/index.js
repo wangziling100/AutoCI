@@ -165,22 +165,56 @@ module.exports = require("os");
 
 const core = __webpack_require__(470);
 const github = __webpack_require__(469);
+const io = __webpack_require__(480)
+const analyser = __webpack_require__(277);
+const executor = __webpack_require__(130)
 
 // most @actions toolkit packages have async methods
-async function run() {
+async function run(testData, debug=false) {
   try{
+    console.log('start...')
+    let configPath, modulesDir, context
+    if (testData!==undefined && testData!==null){
+      configPath = testData.configPath
+      modulesDir = testData.modulesDir
+      context = testData.context
+    }
+    else {
+      configPath = core.getInput('configPath')
+      modulesDir = core.getInput('modulesDir')
+      context = github.context
 
+    }
+
+    const baseInfo = io.getInfo(context)
+    const commit = baseInfo.commit
+    const branch = baseInfo.branch
+    let workspace = analyser.analyse(commit, branch)[1]
+    if (workspace===null) workspace = 'global'
+    const configInfo = io 
+    .locateConfig(workspace, configPath, modulesDir)
+    if(configInfo===null) {
+      core.setFailed(`Sorry, can't find config file`)
+      return
+    }
+    const config = io.getCIConfig(...configInfo)
+    if(debug) console.log('config file', config)
+    const succeed = executor.execute(config)
+    if (succeed) console.log('Succeed!')
+    else core.setFailed('Action failed')
   }
   catch(error){
+    if (debug) console.log(error, 'error message')
     core.setFailed(error.message);
   }
   
 }
+run(null, true)
 
-run();
 module.exports = {
   run: run,
 }
+
 
 /***/ }),
 
@@ -231,6 +265,47 @@ function getApiBaseUrl() {
 }
 exports.getApiBaseUrl = getApiBaseUrl;
 //# sourceMappingURL=utils.js.map
+
+/***/ }),
+
+/***/ 129:
+/***/ (function(module) {
+
+module.exports = require("child_process");
+
+/***/ }),
+
+/***/ 130:
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+const cp = __webpack_require__(129);
+function execute(config){
+    const rootDir = config.dir
+    const commands = config.actions
+    if (commands===undefined || commands===null){
+        console.log(`Sorry, can't find any command`)
+        return false
+    }
+    let curr = ''
+    try{
+        for (let cmd of commands){
+            console.log(cmd, 'cmd')
+            curr = cmd
+            cp.execSync(`cd ${rootDir} && ${cmd}`)
+        }
+    }
+    catch(error){
+        console.log(`Something wrong happens during executing the command: \n ${curr}`)
+        console.log(error)
+        return false
+    }
+    return true
+    
+}
+
+module.exports = {
+    execute: execute,
+}
 
 /***/ }),
 
@@ -567,6 +642,128 @@ class Context {
 }
 exports.Context = Context;
 //# sourceMappingURL=context.js.map
+
+/***/ }),
+
+/***/ 277:
+/***/ (function(module) {
+
+function analyse(commit, branch){
+  let workspace = null;
+  let returnCommit = null;
+  const subcommits = commit.split(':');
+  let head = subcommits[0]
+  head = head.replace(/ /g,'');
+  switch (head){
+    case 'feat': returnCommit='feat'; break;
+    case 'fix': returnCommit='fix'; break;
+    case 'init': returnCommit='init'; break;
+    case 'breakingchange': 
+      returnCommit='breaking change'; break;
+  }
+  let rest = null;
+  let content = null;
+  if (returnCommit===null){
+    const tmp = head.slice(0,5);
+    // merge type
+    if (tmp==='Merge') {
+      returnCommit = 'merge';
+      //rest = commit;
+      content = commit
+    }
+    else return [ null, workspace ];
+  }
+  else {
+    // feat, fix, init, breakingchange type
+    rest = subcommits[1];
+    let tmp = rest.split('@@');
+    if (tmp.length>1) {
+      workspace = tmp[0].replace(/ /g, '');
+      content = tmp.slice(1).join('@@');
+    }
+    else {
+      workspace = 'global';
+      content = rest;
+    }
+  }
+
+  if (returnCommit==='merge'){
+    let re = /( |'|"|\/)+([^ '"/])+@@/
+    workspace = re.exec(content);
+    if (workspace===null) workspace = 'global';
+    else {
+      workspace = workspace[0]
+      workspace = workspace.replace(/ /g, '');
+      workspace = workspace.replace(/@@/g, '');
+      workspace = workspace.replace(/'/g, '');
+      workspace = workspace.replace(/"/g, '');
+      workspace = workspace.replace(/\//g, '')
+    }
+    re = /([0-9])+(.(([0-9])+|x))?.x/;
+    let versions = multiMatch(re, content);
+    //if (!checkVersionValid(versions)) return [ null, workspace ];
+    re = /master|next|alpha|beta/;
+    versions = versions.concat(multiMatch(re, content));
+    if (versions.length===0) return [ null, workspace ]
+    let mergeBranch = findMergeBranch(versions, branch, workspace);
+    if (mergeBranch===null) return [ null, workspace ]
+    mergeBranch = extractVersion(mergeBranch)
+    if (mergeBranch===null) return [ null, workspace ];
+    switch (mergeBranch){
+      case 'next': returnCommit='merge next'; break;
+      case 'alpha': returnCommit='merge alpha'; break;
+      case 'beta': returnCommit='merge beta'; break;
+      case 'N': returnCommit='merge N'; break;
+      case 'N.N': returnCommit='merge N.N'; break;
+      default: returnCommit=null; break;
+    }
+  }
+  return [ returnCommit, workspace]
+}
+
+function multiMatch(reg, string){
+  let matched='';
+  let result = [];
+  let limit = 50;
+  let cnt = 0
+  while (matched!==null && cnt<limit){
+    matched = reg.exec(string);
+    if (matched!==null) {
+      matched = matched[0]
+      result.push(matched);
+    }
+    else break;
+    string = string.replace(matched, '');
+    cnt++
+  }
+  return result;
+}
+
+function findMergeBranch(branches, localBranch, workspace){
+  if (branches.length>2) return null
+  for (let branch of branches){
+    let tmp = branch
+    if (workspace!=='global') tmp = workspace+'@@'+branch
+    if (tmp!==localBranch) return branch
+  }
+  return null
+}
+
+function extractVersion(version){
+  const parts = version.split('.')
+  try{
+    if (parts[1]==='x') return 'N';
+    if (parts[2]==='x') return 'N.N';
+  }
+  catch(err){
+    console.log(err);
+  }
+  return version;
+}
+
+module.exports = {
+    analyse: analyse
+}
 
 /***/ }),
 
@@ -3410,6 +3607,154 @@ function getState(name) {
 }
 exports.getState = getState;
 //# sourceMappingURL=core.js.map
+
+/***/ }),
+
+/***/ 480:
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+const cp = __webpack_require__(129);
+const fs = __webpack_require__(747)
+const path = __webpack_require__(622)
+
+function getInfo(context){
+    let sha 
+    if (context===undefined) sha = '';
+    else sha = context.sha || '';
+    let commit = cp.execSync(`git log --format=%B -n 1 ${sha}`);
+    commit = buffer2String(commit);
+    commit = commit.split('\n')[0]
+    let branch = cp.execSync(`git branch | sed -n '/* /s///p'`)
+    branch = buffer2String(branch)
+    branch = branch.replace(/\n/g, '')
+
+    let email, name;
+    if (context===undefined || context===null){
+        email = 'example@example.com'
+        name = 'example'
+    }
+    else{
+        const info = context.payload.pusher;
+        if (info===undefined || info===null){
+            email = 'example@example.com'
+            name = 'example' 
+        }
+        else{
+            email = info.email
+            name = info.name   
+        }
+        
+    }
+    return{commit, branch, email, name}
+}
+
+function buffer2String(buffer, key='data'){
+  let ret = JSON.stringify(buffer);
+  ret = JSON.parse(ret);
+  ret = ret[key];
+  return String.fromCharCode(...ret);
+}
+
+function locateConfig(workspace, configPath, modulesDir){
+    if (workspace === 'global'){
+        workspace = '.'
+        const isExist = checkPath(configPath)
+        if (isExist) {
+            return [
+                path.join(workspace, modulesDir),
+                JSON.parse(fs.readFileSync(configPath))
+            ]
+        }
+        else return null
+    }
+    else if (workspace!==null && workspace!==undefined){
+        let isExist = checkPath(
+            path.join(workspace, 
+                      modulesDir, 
+                      configPath)
+        )
+        if (isExist) {
+            return [
+                path.join(workspace, modulesDir), 
+                JSON.parse(fs.readFileSync(configPath))
+            ]
+        }
+        let searchArea ='.'
+        if (modulesDir!=='') searchArea = modulesDir
+        const modulePath = searchFile(searchArea, workspace)
+        if (modulePath!==null) {
+            const newPath = path.join(modulePath, configPath)
+            const isExist = checkPath(newPath)
+            if (isExist){
+                return [
+                    modulePath, 
+                    JSON.parse(fs.readFileSync(newPath))
+                ]
+            } 
+            else return null
+        }
+        return null
+    }
+    else{
+        return null
+    }
+    //return null
+}
+
+function searchFile(filePath, target, except=['node_modules', '.git', '..']){
+    if (isIn(filePath, except)) return null
+    const isExist = checkPath(filePath)
+    if (!isExist) return null
+    if (filePath===target) return filePath
+    const stat = fs.statSync(filePath)
+    if (stat && !stat.isDirectory()) return null
+    const dirList = fs.readdirSync(filePath)
+    for (let el of dirList){
+        if (isIn(el, except)) continue
+        const newPath = path.join(filePath, el)
+        if (el===target) return newPath
+        const stat = fs.statSync(newPath)
+        if (!stat.isDirectory) return null
+        const result = searchFile(newPath, target, except)
+        if (result!==null) return result
+    }
+    return null
+}
+
+function isIn(x, array){
+    for (let el of array){
+        if(x===el) return true
+    }
+    return false
+}
+
+function checkPath(path){
+    return fs.existsSync(path)
+}
+
+function getCIConfig(dir, config){
+    if (config===null) {
+        defaultConfig['dir'] = dir
+        return defaultConfig
+    }
+    config['dir'] = dir 
+    return config
+}
+
+const defaultConfig = {
+    actions: [
+        'yarn lint',
+        'yarn test',
+        'yarn build'
+    ]
+}
+
+module.exports = {
+    getInfo: getInfo,
+    searchFile: searchFile,
+    locateConfig: locateConfig,
+    getCIConfig: getCIConfig,
+}
 
 /***/ }),
 
