@@ -13,7 +13,9 @@
     "collectCoverageFrom": [
       "**/*.{js,jsx}",
       "!**/*.test.**",
-      "!**/coverage/**"
+      "!**/coverage/**",
+      "!**/.github/**",
+      "!**/dist/**"
     ],
     "coverageDirectory": "./coverage/",
     "collectCoverage": true
