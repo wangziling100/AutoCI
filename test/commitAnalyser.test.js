@@ -10,6 +10,9 @@ test('test analyse method', ()=>{
     const commit7 = 'init: abc@def@@test'
     const commit8 = 'test: abc@@test'
     const commit9 = 'publish: abc@@test'
+    const commit10 = 'publish-fix: abc@@test'
+    const commit11 = 'publish-feat: abc@@test'
+    const commit12 = 'publish-breaking change: abc@@test'
     expect(analyser.analyse(commit1)).toEqual(['init', 'abc'])
     expect(analyser.analyse(commit2)).toEqual(['init', 'abc'])
     expect(analyser.analyse(commit3)).toEqual(['init', 'abc'])
@@ -19,5 +22,8 @@ test('test analyse method', ()=>{
     expect(analyser.analyse(commit7)).toEqual(['init', 'abc@def'])
     expect(analyser.analyse(commit8)).toEqual(['test', 'abc'])
     expect(analyser.analyse(commit9)).toEqual(['publish', 'abc'])
+    expect(analyser.analyse(commit10)).toEqual(['publish', 'abc'])
+    expect(analyser.analyse(commit11)).toEqual(['publish', 'abc'])
+    expect(analyser.analyse(commit12)).toEqual(['publish', 'abc'])
 
 })
