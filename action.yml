@@ -2,16 +2,18 @@ name: 'auto-ci'
 description: 'CI for monorepo based Node project'
 inputs:
   configPath:
-    description: 'path to config file'
+    description: 'Path to config file.'
     required: true
   modulesDir:
-    description: 'the general directory which stores all modules'
+    description: 'The general directory which stores all modules.'
     required: false
     default: ''
 
 outputs:
   moduleDir: 
-    description: 'root directory of the selected module'
+    description: 'Root directory of the selected module.'
+  info:
+    description: 'Information for futher control flow.'
 runs:
   using: 'node12'
   main: 'dist/index.js'

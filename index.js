@@ -24,7 +24,7 @@ async function run(testData, debug=false) {
     const baseInfo = io.getInfo(context)
     const commit = baseInfo.commit
     const branch = baseInfo.branch
-    let workspace = analyser.analyse(commit, branch)[1]
+    let [returnCommit, workspace] = analyser.analyse(commit, branch)
     if (workspace===null) workspace = 'global'
     const configInfo = io 
     .locateConfig(workspace, configPath, modulesDir)
@@ -39,6 +39,15 @@ async function run(testData, debug=false) {
       console.log('Succeed!')
       core.addPath(config.dir)
       core.setOutput('moduleDir', config.dir)
+      if(returnCommit==='test'){
+        core.setOutput('info', 'test')
+      }
+      else if(returnCommit==='publish'){
+        core.setOutput('info', 'publish')
+      }
+      else{
+        core.setOutput('info', 'normal')
+      }
     }
     else core.setFailed('Action failed')
   }
